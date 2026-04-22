@@ -20,7 +20,7 @@ final class PasteControllerTests: XCTestCase {
         NSPasteboard.general.setString("original", forType: .string)
 
         // Act
-        await controller.paste("new text")
+        await controller.paste("new text", into: nil)
 
         // Assert: pasteboard should be restored to "original"
         let restored = NSPasteboard.general.string(forType: .string)
@@ -34,7 +34,7 @@ final class PasteControllerTests: XCTestCase {
         NSPasteboard.general.clearContents()
 
         // Act — should not crash
-        await controller.paste("new text")
+        await controller.paste("new text", into: nil)
 
         // Assert: since there was nothing saved, the spec says
         // "leave pasted text on pasteboard or clear it — acceptable either way"
@@ -50,7 +50,7 @@ final class PasteControllerTests: XCTestCase {
         // is visible right after calling paste (since nothing was saved to restore).
         NSPasteboard.general.clearContents()
 
-        await controller.paste("interim text")
+        await controller.paste("interim text", into: nil)
 
         // With no prior saved string, implementation does NOT clear — "interim text" remains.
         // This confirms the write step ran.
@@ -65,7 +65,7 @@ final class PasteControllerTests: XCTestCase {
         NSPasteboard.general.clearContents()
         NSPasteboard.general.setString("step1", forType: .string)
 
-        await controller.paste("injected1")
+        await controller.paste("injected1", into: nil)
         let after1 = NSPasteboard.general.string(forType: .string)
         XCTAssertEqual(after1, "step1")
 
@@ -73,7 +73,7 @@ final class PasteControllerTests: XCTestCase {
         NSPasteboard.general.clearContents()
         NSPasteboard.general.setString("step2", forType: .string)
 
-        await controller.paste("injected2")
+        await controller.paste("injected2", into: nil)
         let after2 = NSPasteboard.general.string(forType: .string)
         XCTAssertEqual(after2, "step2")
     }

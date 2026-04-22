@@ -1,4 +1,5 @@
 import AppKit
+import ApplicationServices
 import AVFoundation
 import Speech
 
@@ -7,10 +8,17 @@ class PermissionManager {
 
     // MARK: - Public API
 
-    /// Check Microphone and Speech Recognition permissions.
-    /// Accessibility is NOT required — hotkey is handled via Carbon RegisterEventHotKey.
+    /// Check Microphone, Speech Recognition, and Accessibility permissions.
     func checkAll() async -> Bool {
-        // 1. Microphone
+        // 1. Accessibility (required for CGEvent keyboard simulation / paste)
+        if !AXIsProcessTrusted() {
+            let options = [kAXTrustedCheckOptionPrompt.takeUnretainedValue() as String: true] as CFDictionary
+            AXIsProcessTrustedWithOptions(options)
+            showDeniedGuidance(for: "Accessibility")
+            return false
+        }
+
+        // 2. Microphone
         let micStatus = AVCaptureDevice.authorizationStatus(for: .audio)
         switch micStatus {
         case .notDetermined:

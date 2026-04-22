@@ -146,7 +146,7 @@ APP_BINARY="$APP_MACOS/SmartDictation"
 
 mkdir -p "$APP_MACOS"
 
-# Info.plist gives macOS a bundle identifier — without this the Accessibility grant is silently dropped
+# Info.plist — all three privacy keys are required or macOS crashes the app on first use
 cat > "$APP_BUNDLE/Contents/Info.plist" <<'INFOPLIST'
 <?xml version="1.0" encoding="UTF-8"?>
 <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
@@ -165,9 +165,11 @@ cat > "$APP_BUNDLE/Contents/Info.plist" <<'INFOPLIST'
     <key>LSUIElement</key>
     <true/>
     <key>NSMicrophoneUsageDescription</key>
-    <string>Smart Dictation uses the microphone to transcribe your speech.</string>
+    <string>SmartDictation uses the microphone to transcribe your speech.</string>
     <key>NSSpeechRecognitionUsageDescription</key>
-    <string>Smart Dictation uses speech recognition to convert your speech to text.</string>
+    <string>SmartDictation uses speech recognition to convert your speech to text.</string>
+    <key>NSAccessibilityUsageDescription</key>
+    <string>SmartDictation needs Accessibility access to paste transcribed text into other apps.</string>
 </dict>
 </plist>
 INFOPLIST
@@ -178,6 +180,17 @@ RAW_HASH=$(shasum -a 256 "$RAW_BINARY" | awk '{print $1}')
 BUNDLE_HASH=""
 [ -f "$APP_BINARY" ] && BUNDLE_HASH=$(shasum -a 256 "$APP_BINARY" | awk '{print $1}')
 
+# Copy llama-server and model into the app bundle so the app finds them regardless
+# of what directory it's launched from (LaunchAgent, Raycast, Finder, etc.)
+APP_RESOURCES="$APP_BUNDLE/Contents/Resources"
+mkdir -p "$APP_RESOURCES"
+if [ -d "$BIN_DIR" ]; then
+  cp -r "$BIN_DIR" "$APP_RESOURCES/"
+fi
+if [ -d "$MODEL_DIR" ]; then
+  cp -r "$MODEL_DIR" "$APP_RESOURCES/"
+fi
+
 if [ "$RAW_HASH" != "$BUNDLE_HASH" ]; then
   log "Binary changed — updating /Applications/SmartDictation.app..."
   cp "$RAW_BINARY" "$APP_BINARY"
@@ -187,8 +200,10 @@ if [ "$RAW_HASH" != "$BUNDLE_HASH" ]; then
   # (CFBundleIdentifier + signature hash). Since we only sign when the binary
   # actually changes, the grant survives across setup re-runs.
   codesign --force --deep --sign - "$APP_BUNDLE" 2>/dev/null || true
-  success "/Applications/SmartDictation.app updated  ← re-grant Accessibility in System Settings"
+  success "/Applications/SmartDictation.app updated  ← re-grant Accessibility in System Settings if prompted"
 else
+  # Still re-sign if resources changed even if binary didn't
+  codesign --force --deep --sign - "$APP_BUNDLE" 2>/dev/null || true
   success "/Applications/SmartDictation.app already up to date"
 fi
 
@@ -219,12 +234,16 @@ echo -e "  ${BOLD}Status:${RESET}"
 [ -f "$MODEL_FILE"   ] && echo -e "  ${GREEN}✓${RESET} LLM model"            || echo -e "  ${YELLOW}!${RESET} LLM model (missing — re-run setup)"
 [ -f "$APP_BINARY"   ] && echo -e "  ${GREEN}✓${RESET} SmartDictation.app"   || echo -e "  ${YELLOW}!${RESET} SmartDictation.app (missing)"
 echo ""
-echo -e "  ${BOLD}Required manual step:${RESET}"
-echo -e "  Add the app to Accessibility permissions:"
-echo -e "  ${CYAN}System Settings → Privacy & Security → Accessibility → + → select:${RESET}"
-echo -e "  $APP_BUNDLE"
+echo -e "  ${BOLD}Required manual steps (first-time only):${RESET}"
+echo -e "  Grant all three permissions in System Settings → Privacy & Security:"
 echo -e ""
-echo -e "  ${YELLOW}Tip:${RESET} Open Finder at that path and drag SmartDictation.app into the list."
+echo -e "  ${CYAN}1. Accessibility${RESET}        → SmartDictation  (needed to simulate Cmd+V paste)"
+echo -e "  ${CYAN}2. Microphone${RESET}            → SmartDictation  (needed to hear you speak)"
+echo -e "  ${CYAN}3. Speech Recognition${RESET}    → SmartDictation  (needed to transcribe speech)"
+echo -e ""
+echo -e "  App location: ${CYAN}$APP_BUNDLE${RESET}"
+echo -e "  ${YELLOW}Tip:${RESET} If the app quits immediately after launch, a permission is missing."
+echo -e "  Check: ${CYAN}tail -20 ~/Library/Logs/smart-dictation/daemon.log${RESET}"
 echo ""
 echo -e "  ${BOLD}Usage:${RESET}"
 echo -e "  Press ${BOLD}Cmd+D${RESET} in any app to start/stop dictation."

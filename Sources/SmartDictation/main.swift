@@ -101,8 +101,9 @@ final class DictationCoordinator: DictationStateMachineDelegate {
 
         case .pasting(let text):
             lastPastedText = text
+            let targetApp = sm.recordingTargetApp
             Task { @MainActor in
-                await self.pasteController.paste(text)
+                await self.pasteController.paste(text, into: targetApp)
                 sm.pasteComplete()
             }
 

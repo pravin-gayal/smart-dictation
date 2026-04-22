@@ -1,3 +1,4 @@
+import AppKit
 import Foundation
 import os.log
 
@@ -42,6 +43,9 @@ final class DictationStateMachine {
     /// Stored by setFinalTranscript(_:); read by toggleDictation() and correctionFailed().
     private var storedTranscript: String?
 
+    /// The app that was frontmost when recording started — paste target.
+    private(set) var recordingTargetApp: NSRunningApplication?
+
     // MARK: - Transitions
 
     /// Called by HotkeyDaemon on every Cmd+D press.
@@ -53,6 +57,8 @@ final class DictationStateMachine {
         switch state {
         case .idle:
             storedTranscript = nil
+            recordingTargetApp = NSWorkspace.shared.frontmostApplication
+            smLogger.info("Recording target app: \(self.recordingTargetApp?.localizedName ?? "unknown", privacy: .public)")
             state = .recording
 
         case .recording:
@@ -106,6 +112,7 @@ final class DictationStateMachine {
             return
         }
         storedTranscript = nil
+        recordingTargetApp = nil
         state = .idle
     }
 
