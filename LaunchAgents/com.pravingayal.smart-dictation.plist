@@ -1,0 +1,33 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN"
+  "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+    <key>Label</key>
+    <string>com.pravingayal.smart-dictation</string>
+    <key>ProgramArguments</key>
+    <array>
+        <string>SMART_DICTATION_BINARY_PLACEHOLDER</string>
+    </array>
+    <key>RunAtLoad</key>
+    <true/>
+    <key>KeepAlive</key>
+    <dict>
+        <key>SuccessfulExit</key>
+        <false/>
+    </dict>
+    <key>StandardOutPath</key>
+    <string>/Users/pravingayal/Library/Logs/smart-dictation/daemon.log</string>
+    <key>StandardErrorPath</key>
+    <string>/Users/pravingayal/Library/Logs/smart-dictation/daemon.error.log</string>
+    <key>EnvironmentVariables</key>
+    <dict>
+        <key>LLM_BASE_URL</key>
+        <string>http://localhost:8080</string>
+        <key>LLM_MODEL</key>
+        <string>qwen3.5-4b</string>
+        <key>SMART_DICTATION_RESOURCES</key>
+        <string>SMART_DICTATION_RESOURCES_PLACEHOLDER</string>
+    </dict>
+</dict>
+</plist>

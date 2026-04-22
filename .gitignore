@@ -1,0 +1,9 @@
+.build/
+Resources/models/*.gguf
+Resources/bin/*.dylib
+Resources/bin/llama-server
+SmartDictation.app/
+.idea/
+.DS_Store
+*.o
+*.d
